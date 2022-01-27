@@ -1,81 +1,90 @@
 import requests
 import httplib2
 import apiclient.discovery
-import http.client as httplib
 
 from environs import Env
 from pprint import pprint
 from oauth2client.service_account import ServiceAccountCredentials
 
 
-def create_event_to_ga4(api_secret, measurement_id):
+def create_event_to_ga4(api_secret, measurement_id, credentials_file, spreadsheet_id):
 
-    row_number_to_session_id = get_session_id_to_create_event_ga4(
-        CREDENTIALS_FILE,
-        SPREADSHEET_ID
+    row_number_to_session_id = get_session_ids_to_create_event_ga4(
+        credentials_file,
+        spreadsheet_id
     )
 
-    for session_id in row_number_to_session_id.values():
+    session_ids = row_number_to_session_id.values()
+    row_numbers_for_updating_table = row_number_to_session_id.keys()
+
+    for session_id in session_ids:
 
         payload = {
             'client_id': session_id,
             'events': [
                 {
-                    'name': 'freeweek_login',
+                    'name': 'freecourse_login_27_Jan_18_37',
                 }
             ]
         }
 
         headers = {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36',
         }
 
         params = {
-            'api_secret': api_secret,
-            'measurement_id': measurement_id
+            'measurement_id': measurement_id,
+            'api_secret': api_secret
         }
 
-        response = requests.post(f'https://www.google-analytics.com/mp/collect',
+        response = requests.post('https://www.google-analytics.com/mp/collect',
                                  headers=headers,
                                  params=params,
-                                 data=payload)
+                                 json=payload)
 
-    return row_number_to_session_id.values()
+        response.raise_for_status()
+
+    return row_numbers_for_updating_table
 
 
-def create_event_to_gau(tid):
+def create_event_to_gau(tid, credentials_file, spreadsheet_id):
 
-    session_ids = get_session_id_to_create_event_gau(
-        CREDENTIALS_FILE,
-        SPREADSHEET_ID
+    row_number_to_session_id = get_session_ids_to_create_event_gau(
+        credentials_file,
+        spreadsheet_id
     )
 
-    for session_id in session_ids:
+    row_numbers_for_updating_table = row_number_to_session_id.keys()
 
-        conn = httplib.HTTPConnection("www.google-analytics.com")
-
-        conn.request("POST", "/collect",
-                     f"v=1&t=event&tid={tid}&cid={session_id}&&ec=freeweek&ea=freeweek_login{session_id}&el=signup")
-
-        print(conn.getresponse().headers)
+    for row_number, session_id in row_number_to_session_id.items():
 
         payload = {
             'v': '1',
             't': 'event',
             'tid': tid,
             'cid': session_id,
-            'ec': 'freeweek',
-            'ea': f'freeweek_login{session_id}',
+            'ec': 'course',
+            'ea': 'freecourse',
             'el': 'signup',
         }
 
-        response = requests.post('https://www.google-analytics.com/collect',
-                                 data=payload)
-        response.raise_for_status()
-        pprint(response.url)
-        pprint(response.headers)
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36'
+        }
 
-    return session_ids
+        response = requests.post('https://www.google-analytics.com/collect',
+                                 headers=headers,
+                                 data=payload)
+
+        get = requests.get('https://www.google-analytics.com/collect',
+                           headers=headers)
+
+        response.raise_for_status()
+        status_code = response.status_code
+        #TODO: добавить проверку по статус коду, если не 200, то написать что событие не создалось, мб в отдельной колонке, либо окрасить просто ячейку
+
+    return row_numbers_for_updating_table
 
 
 def connect_to_sheets_api(credentials_file):
@@ -90,7 +99,7 @@ def connect_to_sheets_api(credentials_file):
     return service
 
 
-def get_session_id_to_create_event_ga4(credentials_file, spreadsheet_id):
+def get_session_ids_to_create_event_ga4(credentials_file, spreadsheet_id):
 
     service = connect_to_sheets_api(credentials_file)
     row_values = service.spreadsheets().values().get(
@@ -102,10 +111,13 @@ def get_session_id_to_create_event_ga4(credentials_file, spreadsheet_id):
     for row_number, session_id_and_event in enumerate(row_values['values'], start=2):
         if session_id_and_event[1] != 'да':
             row_number_to_session_id[row_number] = session_id_and_event[0]
+    #TODO: добавить проверки на корректность заполненности ячейки, и подумать, что делать если пустая ячейка
+    #TODO: проверить, что только да, нет и [], если другие значения то окрасить в красный либо выдать что ячейка заполнена некорректно.
+    #TODO: если пустая ячейка, возможно надо проверить есть ли событие для этого session_id, если нет, то создать, если есть, то пропустить
     return row_number_to_session_id
 
 
-def get_session_id_to_create_event_gau(credentials_file, spreadsheet_id):
+def get_session_ids_to_create_event_gau(credentials_file, spreadsheet_id):
 
     service = connect_to_sheets_api(credentials_file)
 
@@ -118,6 +130,9 @@ def get_session_id_to_create_event_gau(credentials_file, spreadsheet_id):
     for row_number, event in enumerate(row_values['values'], start=2):
         if event[0] != 'да':
             rows_for_session_id.append(row_number)
+    # TODO: добавить проверки на корректность заполненности ячейки, и подумать, что делать если пустая ячейка
+    # TODO: проверить, что только да, нет и [], если другие значения то окрасить в красный либо выдать что ячейка заполнена некорректно.
+    # TODO: если пустая ячейка, возможно надо проверить есть ли событие для этого session_id.
 
     range_names_to_create_event_gau = []
 
@@ -131,37 +146,47 @@ def get_session_id_to_create_event_gau(credentials_file, spreadsheet_id):
 
     session_ids = []
 
-    for number, session_id in enumerate(session_id_values['valueRanges']):
+    for session_id in session_id_values['valueRanges']:
         session_ids.append(session_id['values'][0][0])
 
-    return session_ids
+    row_number_to_session_id = dict(zip(rows_for_session_id, session_ids))
+
+    return row_number_to_session_id
 
 
-def update_table_after_creating_events_ga4(credentials_file, spreadsheet_id):
+def update_table_after_creating_events(credentials_file, spreadsheet_id,
+                                       platform_name, api_secret=None,
+                                       measurement_id=None, tid=None):
 
     service = connect_to_sheets_api(credentials_file)
 
-    session_ids = create_event_to_ga4(api_secret, measurement_id)
+    if platform_name == "GA4":
+        column_name = "AA"
+        row_number_to_update = create_event_to_ga4(api_secret,
+                                                   measurement_id,
+                                                   credentials_file,
+                                                   spreadsheet_id)
 
-    data = []
+    if platform_name == "GAU":
+        column_name = "AB"
+        row_number_to_update = create_event_to_gau(tid,
+                                                   credentials_file,
+                                                   spreadsheet_id)
 
-    for session_id in session_ids:
-        data.append(
-            {
-                'range': f'AA{session_id}',
-                'values': 'да'
-            }
-        )
+    for row in row_number_to_update:
 
-    body = {
-        'valueInputOption': '',
-        'data': data
-    }
-    print(session_ids)
-    row_values = service.spreadsheets().values().batchUpdate(
-        spreadsheetId=spreadsheet_id,
-        body=body,
-    ).execute()
+        body = {
+            "valueInputOption": "USER_ENTERED",
+            "data": [
+                {"range": f"{column_name}{row}",
+                 "values": [['да']]
+                 },
+            ]
+        }
+        row_values = service.spreadsheets().values().batchUpdate(
+            spreadsheetId=spreadsheet_id,
+            body=body,
+        ).execute()
 
 
 if __name__ == '__main__':
@@ -171,19 +196,13 @@ if __name__ == '__main__':
     api_secret = env('API_SECRET')
     measurement_id = env('MEASUREMENT_ID')
     tid = env('TID')
+    credentials_file = env('CREDENTIALS_FILE')
+    spreadsheet_id = env('SPREADSHEET_ID')
 
-    CREDENTIALS_FILE = env('CREDENTIALS_FILE')
+    update_table_after_creating_events(credentials_file, spreadsheet_id,
+                                       'GAU', None, None, tid)
 
-    SPREADSHEET_ID = env('SPREADSHEET_ID')
-
-    update_table_after_creating_events_ga4(CREDENTIALS_FILE, SPREADSHEET_ID)
-
-    # create_event_to_gau(tid)
-
-    # get_session_id_to_create_event_ga4(CREDENTIALS_FILE, SPREADSHEET_ID)
-
-    # create_event_to_ga4(api_secret, measurement_id)
-    # print(add_event_to_gau(tid))
-
-
-
+    update_table_after_creating_events(credentials_file, spreadsheet_id, 'GA4',
+                                       api_secret,
+                                       measurement_id,
+                                       )
