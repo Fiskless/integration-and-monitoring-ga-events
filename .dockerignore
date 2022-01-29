@@ -140,6 +140,7 @@ dmypy.json
 cython_debug/
 .git
 .idea
-peaceful-berm-339112-8988ae360f4a.json
 user.key
 user.crt
+kubeconfig
+ConfigMap.yaml

@@ -13,5 +13,3 @@ RUN apt update && apt install -y python3-pip                                  \
 
 COPY . /code/
 
-
-CMD [ "python3", "tracking.py"]

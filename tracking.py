@@ -1,17 +1,19 @@
 import requests
 import httplib2
 import apiclient.discovery
+from contextlib import suppress
 
 from environs import Env
-from pprint import pprint
 from oauth2client.service_account import ServiceAccountCredentials
 
 
 def create_event_to_ga4(api_secret, measurement_id, credentials_file, spreadsheet_id):
 
-    row_number_to_session_id = get_session_ids_to_create_event_ga4(
+    row_number_to_session_id = get_session_ids_to_create_event(
         credentials_file,
-        spreadsheet_id
+        spreadsheet_id,
+        25,
+        "Z"
     )
 
     session_ids = row_number_to_session_id.values()
@@ -23,7 +25,7 @@ def create_event_to_ga4(api_secret, measurement_id, credentials_file, spreadshee
             'client_id': session_id,
             'events': [
                 {
-                    'name': 'freecourse_login_27_Jan_18_37',
+                    'name': 'freeweek_login',
                 }
             ]
         }
@@ -50,9 +52,11 @@ def create_event_to_ga4(api_secret, measurement_id, credentials_file, spreadshee
 
 def create_event_to_gau(tid, credentials_file, spreadsheet_id):
 
-    row_number_to_session_id = get_session_ids_to_create_event_gau(
+    row_number_to_session_id = get_session_ids_to_create_event(
         credentials_file,
-        spreadsheet_id
+        spreadsheet_id,
+        26,
+        "AA"
     )
 
     row_numbers_for_updating_table = row_number_to_session_id.keys()
@@ -65,7 +69,7 @@ def create_event_to_gau(tid, credentials_file, spreadsheet_id):
             'tid': tid,
             'cid': session_id,
             'ec': 'course',
-            'ea': 'freecourse',
+            'ea': 'freeweek',
             'el': 'signup',
         }
 
@@ -96,123 +100,53 @@ def connect_to_sheets_api(credentials_file):
     return service
 
 
-def get_session_ids_to_create_event_ga4(credentials_file, spreadsheet_id):
-
+def get_session_ids_to_create_event(credentials_file, spreadsheet_id,
+                                    ga_column_number, column_symbol):
     service = connect_to_sheets_api(credentials_file)
     row_values = service.spreadsheets().values().get(
         spreadsheetId=spreadsheet_id,
-        range='Z2:AA',
+        range='A2:AB',
         majorDimension='ROWS'
     ).execute()
+    session_id_column_number = 27
     row_number_to_session_id = {}
-    for row_number, session_id_and_event in enumerate(row_values['values'], start=2):
-        try:
-            if session_id_and_event[1] != 'нет' or session_id_and_event[1] != 'Нет':
-                row_number_to_session_id[row_number] = session_id_and_event[0]
-            elif session_id_and_event[1] != 'да' or session_id_and_event[1] != 'Да':
-                pass
-            else:
-                body = {
-                    "valueInputOption": "USER_ENTERED",
-                    "data": [
-                        {"range": f"AA{row_number}",
-                         "values": [[
-                             'Некорректное значение для ячейки, должно быть да или нет'
-                         ]]
-                         },
-                    ]
-                }
-                row_values = service.spreadsheets().values().batchUpdate(
-                    spreadsheetId=spreadsheet_id,
-                    body=body,
-                ).execute()
-        except IndexError:
-            body = {
-                "valueInputOption": "USER_ENTERED",
-                "data": [
-                    {"range": f"AA{row_number}",
-                     "values": [['нет']]
-                     },
-                ]
-            }
-            row_values = service.spreadsheets().values().batchUpdate(
-                spreadsheetId=spreadsheet_id,
-                body=body,
-            ).execute()
-            row_number_to_session_id[row_number] = session_id_and_event[0]
-
-    #TODO: добавить проверки на корректность заполненности ячейки, и подумать, что делать если пустая ячейка
-    #TODO: проверить, что только да, нет и [], если другие значения то окрасить в красный либо выдать что ячейка заполнена некорректно.
-    #TODO: если пустая ячейка, возможно надо проверить есть ли событие для этого session_id, если нет, то создать, если есть, то пропустить
-    return row_number_to_session_id
-
-
-def get_session_ids_to_create_event_gau(credentials_file, spreadsheet_id):
-
-    service = connect_to_sheets_api(credentials_file)
-
-    row_values = service.spreadsheets().values().get(
-        spreadsheetId=spreadsheet_id,
-        range='AB2:AB',
-        majorDimension='ROWS'
-    ).execute()
-    pprint(row_values['values'])
-    rows_for_session_id = []
-    for row_number, event in enumerate(row_values['values'], start=2):
-        try:
-            if event[0] == 'нет' or event[0] == 'Нет':
-                rows_for_session_id.append(row_number)
-            elif event[0] == 'да' or event[0] == 'Да':
-                pass
-            else:
-                body = {
-                    "valueInputOption": "USER_ENTERED",
-                    "data": [
-                        {"range": f"AB{row_number}",
-                         "values": [['Некорректное значение для ячейки, должно быть да или нет']]
-                         },
-                    ]
-                }
-                row_values = service.spreadsheets().values().batchUpdate(
-                    spreadsheetId=spreadsheet_id,
-                    body=body,
-                ).execute()
-
-        except IndexError:
-            body = {
-                "valueInputOption": "USER_ENTERED",
-                "data": [
-                    {"range": f"AB{row_number}",
-                     "values": [['нет']]
-                     },
-                ]
-            }
-            row_values = service.spreadsheets().values().batchUpdate(
-                spreadsheetId=spreadsheet_id,
-                body=body,
-            ).execute()
-            rows_for_session_id.append(row_number)
-
-    # TODO: добавить проверки на корректность заполненности ячейки, и подумать, что делать если пустая ячейка
-    # TODO: проверить, что только да, нет и [], если другие значения то окрасить в красный либо выдать что ячейка заполнена некорректно.
-    # TODO: если пустая ячейка, возможно надо проверить есть ли событие для этого session_id.
-
-    range_names_to_create_event_gau = []
-
-    for row in rows_for_session_id:
-        range_names_to_create_event_gau.append(f'Z{row}')
-
-    session_id_values = service.spreadsheets().values().batchGet(
-        spreadsheetId=spreadsheet_id,
-        ranges=range_names_to_create_event_gau
-    ).execute()
-
-    session_ids = []
-
-    for session_id in session_id_values['valueRanges']:
-        session_ids.append(session_id['values'][0][0])
-
-    row_number_to_session_id = dict(zip(rows_for_session_id, session_ids))
+    for row_number, students_data in enumerate(row_values['values'], start=2):
+        with suppress(IndexError):
+            if students_data[0] and students_data[27]:
+                if students_data[ga_column_number] == 'нет' or students_data[ga_column_number] == 'Нет':
+                    row_number_to_session_id[row_number] = students_data[session_id_column_number]
+                elif students_data[ga_column_number] == 'да' or students_data[ga_column_number] == 'Да':
+                    pass
+                elif students_data[ga_column_number] == '':
+                    body = {
+                        "valueInputOption": "USER_ENTERED",
+                        "data": [
+                            {"range": f"{column_symbol}{row_number}",
+                             "values": [['нет']]
+                             },
+                        ]
+                    }
+                    row_values = service.spreadsheets().values().batchUpdate(
+                        spreadsheetId=spreadsheet_id,
+                        body=body,
+                    ).execute()
+                    row_number_to_session_id[row_number] = students_data[
+                        session_id_column_number]
+                else:
+                    body = {
+                        "valueInputOption": "USER_ENTERED",
+                        "data": [
+                            {"range": f"{column_symbol}{row_number}",
+                             "values": [[
+                                 'Некорректное значение для ячейки, должно быть да или нет'
+                             ]]
+                             },
+                        ]
+                    }
+                    row_values = service.spreadsheets().values().batchUpdate(
+                        spreadsheetId=spreadsheet_id,
+                        body=body,
+                    ).execute()
 
     return row_number_to_session_id
 
@@ -224,14 +158,14 @@ def update_table_after_creating_events(credentials_file, spreadsheet_id,
     service = connect_to_sheets_api(credentials_file)
 
     if platform_name == "GA4":
-        column_name = "AA"
+        column_name = "Z"
         row_number_to_update = create_event_to_ga4(api_secret,
                                                    measurement_id,
                                                    credentials_file,
                                                    spreadsheet_id)
 
     if platform_name == "GAU":
-        column_name = "AB"
+        column_name = "AA"
         row_number_to_update = create_event_to_gau(tid,
                                                    credentials_file,
                                                    spreadsheet_id)
@@ -262,13 +196,10 @@ if __name__ == '__main__':
     credentials_file = env('CREDENTIALS_FILE')
     spreadsheet_id = env('SPREADSHEET_ID')
 
-    # update_table_after_creating_events(credentials_file, spreadsheet_id,
-    #                                    'GAU', None, None, tid)
-    #
-    # update_table_after_creating_events(credentials_file, spreadsheet_id, 'GA4',
-    #                                    api_secret,
-    #                                    measurement_id,
-    #                                    )
+    update_table_after_creating_events(credentials_file, spreadsheet_id,
+                                       'GAU', None, None, tid)
 
-    get_session_ids_to_create_event_ga4(credentials_file, spreadsheet_id)
-    # get_session_ids_to_create_event_gau(credentials_file, spreadsheet_id)
+    update_table_after_creating_events(credentials_file, spreadsheet_id, 'GA4',
+                                       api_secret,
+                                       measurement_id,
+                                       )

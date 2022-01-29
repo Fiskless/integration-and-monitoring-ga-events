@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: tracking-ga-freeweek
+spec:
+  schedule: "0 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: tracking-ga-freeweek
+            image: fiskless/tracking_ga
+            command: [ "python3", "tracking.py" ]
+            envFrom:
+              - configMapRef:
+                  name: tracking-ga-freeweek
+            imagePullPolicy: IfNotPresent
+          restartPolicy: OnFailure
