@@ -83,7 +83,6 @@ def create_event_to_gau(tid, credentials_file, spreadsheet_id):
 
         response.raise_for_status()
         status_code = response.status_code
-        #TODO: добавить проверку по статус коду, если не 200, то написать что событие не создалось, мб в отдельной колонке, либо окрасить просто ячейку
 
     return row_numbers_for_updating_table
 
@@ -110,6 +109,7 @@ def get_session_ids_to_create_event(credentials_file, spreadsheet_id,
     ).execute()
     session_id_column_number = 27
     row_number_to_session_id = {}
+    updating_rows_without_yes_values = []
     for row_number, students_data in enumerate(row_values['values'], start=2):
         with suppress(IndexError):
             if students_data[0] and students_data[27]:
@@ -118,35 +118,28 @@ def get_session_ids_to_create_event(credentials_file, spreadsheet_id,
                 elif students_data[ga_column_number] == 'да' or students_data[ga_column_number] == 'Да':
                     pass
                 elif students_data[ga_column_number] == '':
-                    body = {
-                        "valueInputOption": "USER_ENTERED",
-                        "data": [
-                            {"range": f"{column_symbol}{row_number}",
-                             "values": [['нет']]
-                             },
-                        ]
-                    }
-                    row_values = service.spreadsheets().values().batchUpdate(
-                        spreadsheetId=spreadsheet_id,
-                        body=body,
-                    ).execute()
+                    updating_rows_without_yes_values.append(
+                        {"range": f"{column_symbol}{row_number}",
+                         "values": [['нет']]
+                         }
+                    )
                     row_number_to_session_id[row_number] = students_data[
                         session_id_column_number]
                 else:
-                    body = {
-                        "valueInputOption": "USER_ENTERED",
-                        "data": [
-                            {"range": f"{column_symbol}{row_number}",
-                             "values": [[
-                                 'Некорректное значение для ячейки, должно быть да или нет'
-                             ]]
-                             },
-                        ]
-                    }
-                    row_values = service.spreadsheets().values().batchUpdate(
-                        spreadsheetId=spreadsheet_id,
-                        body=body,
-                    ).execute()
+                    updating_rows_without_yes_values.append(
+                        {"range": f"{column_symbol}{row_number}",
+                         "values": [['Некорректное значение для ячейки, должно быть да или нет']]
+                         }
+                    )
+
+    body = {
+        "valueInputOption": "USER_ENTERED",
+        "data": updating_rows_without_yes_values
+    }
+    row_values = service.spreadsheets().values().batchUpdate(
+        spreadsheetId=spreadsheet_id,
+        body=body,
+    ).execute()
 
     return row_number_to_session_id
 
@@ -170,20 +163,17 @@ def update_table_after_creating_events(credentials_file, spreadsheet_id,
                                                    credentials_file,
                                                    spreadsheet_id)
 
+    updating_row_values = []
     for row in row_number_to_update:
-
-        body = {
-            "valueInputOption": "USER_ENTERED",
-            "data": [
-                {"range": f"{column_name}{row}",
-                 "values": [['да']]
-                 },
-            ]
-        }
-        row_values = service.spreadsheets().values().batchUpdate(
-            spreadsheetId=spreadsheet_id,
-            body=body,
-        ).execute()
+        updating_row_values.append({"range": f"{column_name}{row}", "values": [['да']]})
+    body = {
+        "valueInputOption": "USER_ENTERED",
+        "data": updating_row_values
+    }
+    row_values = service.spreadsheets().values().batchUpdate(
+        spreadsheetId=spreadsheet_id,
+        body=body,
+    ).execute()
 
 
 if __name__ == '__main__':
