@@ -3,17 +3,24 @@ kind: CronJob
 metadata:
   name: tracking-ga-freeweek
 spec:
-  schedule: "0 * * * *"
+  schedule: "1 * * * *"
   jobTemplate:
     spec:
       template:
         spec:
           containers:
           - name: tracking-ga-freeweek
-            image: fiskless/tracking_ga
+            image: fiskless/tracking_ga_new
             command: [ "python3", "tracking.py" ]
             envFrom:
               - configMapRef:
                   name: tracking-ga-freeweek
+            volumeMounts:
+              - name: google-api
+                mountPath: "/etc/google-api"
             imagePullPolicy: IfNotPresent
           restartPolicy: OnFailure
+          volumes:
+          - name: google-api
+            secret:
+              secretName: google-api-key
