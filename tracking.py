@@ -9,19 +9,20 @@ from environs import Env
 from oauth2client.service_account import ServiceAccountCredentials
 
 
-def create_event_to_ga4(api_secret, measurement_id, credentials_file, spreadsheet_id):
+def create_event_to_ga4(api_secret, measurement_id,
+                        credentials_file, spreadsheet_id, column_name):
 
     row_number_to_session_id = get_session_ids_to_create_event(
         credentials_file,
         spreadsheet_id,
         25,
-        "Z"
+        column_name
     )
-
-    session_ids = row_number_to_session_id.values()
     row_numbers_for_updating_table = row_number_to_session_id.keys()
 
-    for session_id in session_ids:
+    unsuccessful_requests_ga4_data = []
+
+    for row_number, session_id in row_number_to_session_id.items():
 
         payload = {
             'client_id': session_id,
@@ -48,20 +49,28 @@ def create_event_to_ga4(api_secret, measurement_id, credentials_file, spreadshee
                                  json=payload)
 
         response.raise_for_status()
+        if response.status_code != 204:
+            unsuccessful_requests_ga4_data.append(
+                {"range": f"{column_name}{row_number}",
+                 "values": [['Ошибка при создании события']]
+                 }
+            )
 
-    return row_numbers_for_updating_table
+    return unsuccessful_requests_ga4_data, row_numbers_for_updating_table
 
 
-def create_event_to_gau(tid, credentials_file, spreadsheet_id):
+def create_event_to_gau(tid, credentials_file, spreadsheet_id, column_name):
 
     row_number_to_session_id = get_session_ids_to_create_event(
         credentials_file,
         spreadsheet_id,
         26,
-        "AA"
+        column_name
     )
 
     row_numbers_for_updating_table = row_number_to_session_id.keys()
+
+    unsuccessful_requests_gau_data = []
 
     for row_number, session_id in row_number_to_session_id.items():
 
@@ -84,9 +93,14 @@ def create_event_to_gau(tid, credentials_file, spreadsheet_id):
                                  data=payload)
 
         response.raise_for_status()
-        status_code = response.status_code
+        if response.status_code != 200:
+            unsuccessful_requests_gau_data.append(
+                {"range": f"{column_name}{row_number}",
+                 "values": [['Ошибка при создании события']]
+                 }
+            )
 
-    return row_numbers_for_updating_table
+    return unsuccessful_requests_gau_data, row_numbers_for_updating_table
 
 
 def connect_to_sheets_api(credentials_file):
@@ -154,23 +168,27 @@ def update_table_after_creating_events(credentials_file, spreadsheet_id,
 
     if platform_name == "GA4":
         column_name = "Z"
-        row_number_to_update = create_event_to_ga4(api_secret,
-                                                   measurement_id,
-                                                   credentials_file,
-                                                   spreadsheet_id)
+        unsuccessful_requests_data, row_number_to_update =\
+            create_event_to_ga4(api_secret,
+                                measurement_id,
+                                credentials_file,
+                                spreadsheet_id,
+                                column_name)
 
     if platform_name == "GAU":
         column_name = "AA"
-        row_number_to_update = create_event_to_gau(tid,
-                                                   credentials_file,
-                                                   spreadsheet_id)
+        unsuccessful_requests_data, row_number_to_update = \
+            create_event_to_gau(tid,
+                                credentials_file,
+                                spreadsheet_id,
+                                column_name)
 
     updating_row_values = []
     for row in row_number_to_update:
         updating_row_values.append({"range": f"{column_name}{row}", "values": [['да']]})
     body = {
         "valueInputOption": "USER_ENTERED",
-        "data": updating_row_values
+        "data": updating_row_values + unsuccessful_requests_data
     }
     row_values = service.spreadsheets().values().batchUpdate(
         spreadsheetId=spreadsheet_id,

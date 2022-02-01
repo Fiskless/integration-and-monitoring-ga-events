@@ -3,7 +3,7 @@ kind: CronJob
 metadata:
   name: tracking-ga-freeweek
 spec:
-  schedule: "36 * * * *"
+  schedule: "1 * * * *"
   jobTemplate:
     spec:
       template:
