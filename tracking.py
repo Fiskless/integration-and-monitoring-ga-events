@@ -1,8 +1,10 @@
 import requests
 import httplib2
 import apiclient.discovery
-from contextlib import suppress
+import rollbar
+import sys
 
+from contextlib import suppress
 from environs import Env
 from oauth2client.service_account import ServiceAccountCredentials
 
@@ -185,11 +187,30 @@ if __name__ == '__main__':
     tid = env('TID')
     credentials_file = env('CREDENTIALS_FILE', '/etc/google-api/gdrive_key.json')
     spreadsheet_id = env('SPREADSHEET_ID')
+    rollbar_token = env('ROLLBAR_TOKEN')
+    environment = env('ENVIRONMENT', 'production')
 
-    update_table_after_creating_events(credentials_file, spreadsheet_id,
-                                       'GAU', None, None, tid)
+    if environment == 'production':
+        rollbar.init(rollbar_token, environment=environment)
+        try:
+            update_table_after_creating_events(credentials_file, spreadsheet_id,
+                                               'GAU', None, None, tid)
 
-    update_table_after_creating_events(credentials_file, spreadsheet_id, 'GA4',
-                                       api_secret,
-                                       measurement_id,
-                                       )
+            update_table_after_creating_events(credentials_file, spreadsheet_id, 'GA4',
+                                               api_secret,
+                                               measurement_id,
+                                               )
+        except:
+            rollbar.report_exc_info(sys.exc_info())
+
+    elif environment == 'development':
+
+        update_table_after_creating_events(credentials_file, spreadsheet_id,
+                                           'GAU', None, None, tid)
+
+        update_table_after_creating_events(credentials_file, spreadsheet_id,
+                                           'GA4',
+                                           api_secret,
+                                           measurement_id,
+                                           )
+
