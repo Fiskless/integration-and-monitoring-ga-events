@@ -146,3 +146,4 @@ user.key
 user.crt
 kubeconfig
 ConfigMap.yaml
+kubernetes_test/

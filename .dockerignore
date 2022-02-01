@@ -145,3 +145,4 @@ user.crt
 kubeconfig
 ConfigMap.yaml
 peaceful-berm.json
+kubernetes_test/

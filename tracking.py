@@ -183,7 +183,7 @@ if __name__ == '__main__':
     api_secret = env('API_SECRET')
     measurement_id = env('MEASUREMENT_ID')
     tid = env('TID')
-    credentials_file = env('CREDENTIALS_FILE')
+    credentials_file = env('CREDENTIALS_FILE', '/etc/google-api/gdrive_key.json')
     spreadsheet_id = env('SPREADSHEET_ID')
 
     update_table_after_creating_events(credentials_file, spreadsheet_id,
