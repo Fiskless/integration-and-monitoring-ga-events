@@ -44,8 +44,7 @@
 
       ![Image alt](https://github.com/Fiskless/integration-and-monitoring-ga-events/blob/master/screenshots/pic4.png)
 
-2) `MEASUREMENT_ID` - идентификатор потока данных в GA4
-Чтобы найти идентификатор потока данных Google Analytics 4:
+2) `MEASUREMENT_ID` - идентификатор потока данных в GA4. Чтобы найти идентификатор потока данных Google Analytics 4:
 
    * Перейдите в раздел **Администратор - Потоки данных**:
 
@@ -59,8 +58,8 @@
 поле **Идентификатор потока данных**:
 
       ![Image alt](https://github.com/Fiskless/integration-and-monitoring-ga-events/blob/master/screenshots/pic7.png)
-
-Это и есть ваш идентификатор отслеживания Google Analytics 4
+      
+      Это и есть ваш идентификатор отслеживания Google Analytics 4
 
 3) `TID` - идентификатор отслеживания в GAU
 Чтобы найти идентификатор отслеживания Google Analytics Universal:
@@ -70,11 +69,11 @@
       ![Image alt](https://github.com/Fiskless/integration-and-monitoring-ga-events/blob/master/screenshots/pic22.png)
 
    * В открывшемся окне в графе **Идентификатор отслеживания** и есть ваш 
-идентификатор отслеживания Google Analytics Universal
+идентификатор отслеживания Google Analytics Universal:
 
       ![Image alt](https://github.com/Fiskless/integration-and-monitoring-ga-events/blob/master/screenshots/pic23.png)
 
-4) `SPREADSHEET_ID` - id Google-таблицы, берется прямо из url-ссылки на таблицу
+4) `SPREADSHEET_ID` - id Google-таблицы, берется прямо из url-ссылки на таблицу:
 
       ![Image alt](https://github.com/Fiskless/integration-and-monitoring-ga-events/blob/master/screenshots/picid.png)
 
@@ -96,22 +95,22 @@
 
       ![Image alt](https://github.com/Fiskless/integration-and-monitoring-ga-events/blob/master/screenshots/pic11.png)
 
-   * В разделе APIs нажмите **Go to APIs overview**
+   * В разделе APIs нажмите **Go to APIs overview**:
 
       ![Image alt](https://github.com/Fiskless/integration-and-monitoring-ga-events/blob/master/screenshots/pic12.png)
 
-   * Нажмите **ENABLE APIS AND SERVICES**
+   * Нажмите **ENABLE APIS AND SERVICES**:
 
       ![Image alt](https://github.com/Fiskless/integration-and-monitoring-ga-events/blob/master/screenshots/pic13.png)
 
    * Необходимо подключить 2 АПИ: **Google Sheets API**  и **Google Drive API**.
 В поисковом окне напишите **Google Sheets API**, после чего нажмите на **ENABLE**
 
-   * Затем вернитесь в это же поисковое окно, и напишите **Google Drive API**, после чего нажмите на **ENABLE**
+   * Затем вернитесь в это же поисковое окно, и напишите **Google Drive API**, после чего нажмите на **ENABLE**:
 
       ![Image alt](https://github.com/Fiskless/integration-and-monitoring-ga-events/blob/master/screenshots/pic14.png)
 
-   * Далее необходимо создать сервисный аккаунт. В открывшемся окне нажмите **CREATE CREDENTIALS**
+   * Далее необходимо создать сервисный аккаунт. В открывшемся окне нажмите **CREATE CREDENTIALS**:
 
       ![Image alt](https://github.com/Fiskless/integration-and-monitoring-ga-events/blob/master/screenshots/pic15.png)
 
@@ -133,7 +132,7 @@
 
       ![Image alt](https://github.com/Fiskless/integration-and-monitoring-ga-events/blob/master/screenshots/pic19.png)
 
-   * Далее перейдите во вкладку **KEYS**, далее **ADD KEY - Create new key**.  В открывшемся окне выберите JSON и нажмите CREATE. Далее сохраните этот файл у себя на ПК.
+   * Далее перейдите во вкладку **KEYS**, далее **ADD KEY - Create new key**.  В открывшемся окне выберите JSON и нажмите CREATE. Далее загрузите себе этот файл.
 
       ![Image alt](https://github.com/Fiskless/integration-and-monitoring-ga-events/blob/master/screenshots/pic21.png)
 
