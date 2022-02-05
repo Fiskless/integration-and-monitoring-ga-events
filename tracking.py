@@ -204,11 +204,11 @@ if __name__ == '__main__':
     tid = env('TID')
     credentials_file = env('CREDENTIALS_FILE', '/etc/google-api/gdrive_key.json')
     spreadsheet_id = env('SPREADSHEET_ID')
-    rollbar_token = env('ROLLBAR_TOKEN')
+    rollbar_access_token = env('ROLLBAR_ACCESS_TOKEN')
     environment = env('ENVIRONMENT', 'production')
 
     if environment == 'production':
-        rollbar.init(rollbar_token, environment=environment)
+        rollbar.init(rollbar_access_token, environment=environment)
         try:
             update_table_after_creating_events(credentials_file,
                                                spreadsheet_id,

@@ -18,6 +18,7 @@
 ## Как развернуть скрипт по трекингу событий
 
 Все этапы по развороту dev-версии локально и prod-версии в кластере указаны в [инструкции](https://github.com/Fiskless/integration-and-monitoring-ga-events/blob/master/running_tracking_script.md).
+
 Проверка создания событий в GA4 и GAU описана в [инструкции](https://github.com/Fiskless/integration-and-monitoring-ga-events/blob/master/events_creating_test.md).
 
 ## Как запустить скрипт по мониторингу
