@@ -146,3 +146,4 @@ kubeconfig
 ConfigMap.yaml
 peaceful-berm.json
 kubernetes_test/
+tracking_old.py

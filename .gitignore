@@ -147,3 +147,4 @@ user.crt
 kubeconfig
 ConfigMap.yaml
 kubernetes_test/
+tracking_old.py

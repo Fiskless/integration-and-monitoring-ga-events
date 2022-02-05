@@ -6,12 +6,12 @@
 
 - Скачайте код
 - Установите зависимости командой 
-    ```sh
-    pip install -r requirements.txt
+    ```shell-session
+    $ pip install -r requirements.txt
     ```
-- Запустите сервер командой 
-    ```sh
-    python3 tracking.py
+- Запустите скрипт командой 
+    ```shell-session
+    $ python3 tracking.py
     ```
 
 ## Переменные окружения
@@ -141,37 +141,43 @@
       ![Image alt](https://github.com/Fiskless/integration-and-monitoring-ga-events/blob/master/screenshots/tracking_running_instructions_pics/pic20.png)
 
 
+6) `ROLLBAR_TOKEN` - токен для доступа к [Rollbar](https://rollbar.com/)
+7) `ENVIRONMENT` - среда, необходимая для отображения событий в `Rollbar`. При 
+разработке поставьте значение `development`, на боевом сервере - `production`.
+
 ## Как запустить prod-версию в кластере:
 
-Создайте фал ConfigMap.yaml такого вида:
-```shell-session
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: tracking-ga-freeweek
-  labels:
-    app: tracking-ga-freeweek
-data:
-  API_SECRET: XXXXXXXXXXX-XXXXXXXXXX
-  MEASUREMENT_ID: G-XXXXXXXXXX
-  TID: UA-XXXXXXXXX-X
-  CREDENTIALS_FILE: some-filename.json
-  SPREADSHEET_ID: 1AdfV45TYnj6jN49fUKNluTacNkbuqmwdUF-2gYfnx5A
-  ROLLBAR_TOKEN: 89dsfgsdfg89f8gd9fg89df7gdf7g6dfg
-  ENVIRONMENT: production
-```
+- Создайте фал ConfigMap.yaml такого вида:
+    ```shell-session
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: tracking-ga-freeweek
+      labels:
+        app: tracking-ga-freeweek
+    data:
+      API_SECRET: XXXXXXXXXXX-XXXXXXXXXX
+      MEASUREMENT_ID: G-XXXXXXXXXX
+      TID: UA-XXXXXXXXX-X
+      CREDENTIALS_FILE: some-filename.json
+      SPREADSHEET_ID: 1AdfV45TYnj6jN49fUKNluTacNkbuqmwdUF-2gYfnx5A
+      ROLLBAR_TOKEN: 89dsfgsdfg89f8gd9fg89df7gdf7g6dfg
+      ENVIRONMENT: production
+    ```
+    Значения переменных окружения берутся из прошлого пункта.
 
-Создайте секрет в кластере, в котором будет находиться `some-filename.json`:
-```shell-session
-$ kubectl create secret generic google-api-key --from-file some-filename.json
-```
 
-Загрузите ConfigMap в кластер:
-```shell-session
-$ kubectl apply -f ConfigMap.yaml
-```
+- Создайте секрет в кластере, в котором будет находиться `some-filename.json`:
+    ```shell-session
+    $ kubectl create secret generic google-api-key --from-file some-filename.json
+    ```
 
-Загрузите cronjob, который будет запускаться 1 раз в час:
-```shell-session
-$ kubectl apply -f tracking-cronjob.yaml
-```
+- Загрузите ConfigMap в кластер:
+    ```shell-session
+    $ kubectl apply -f ConfigMap.yaml
+    ```
+
+- Загрузите cronjob, который будет запускаться 1 раз в час:
+    ```shell-session
+    $ kubectl apply -f tracking-cronjob.yaml
+    ```
